@@ -1,0 +1,45 @@
+version: '3'
+
+networks:
+  sharding-jdbc-demo:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/24
+
+services:
+  master:
+    image: mysql
+    container_name: sharding-jdbc-demo-master
+    ports:
+      - "3307:3306"
+    volumes:
+      - "./master/data:/var/lib/mysql"
+      - "./master/mysql-files:/var/lib/mysql-files"         # win 下的 MySQL8 需要加这一个
+      - "./master/log/error.log:/var/log/mysql/error.log"
+      - "./master/my.cnf:/etc/mysql/my.cnf"
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    entrypoint: bash -c "chown -R mysql:mysql /var/log/mysql && chmod 644 /etc/mysql/my.cnf && exec /entrypoint.sh mysqld"
+    restart: unless-stopped
+    networks:
+      sharding-jdbc-demo:
+        ipv4_address: 172.25.0.101
+
+  slave:
+    image: mysql
+    container_name: sharding-jdbc-demo-slave
+    ports:
+      - "3308:3306"
+    volumes:
+      - "./slave/data:/var/lib/mysql"
+      - "./slave/mysql-files:/var/lib/mysql-files"
+      - "./slave/log/error.log:/var/log/mysql/error.log"
+      - "./slave/my.cnf:/etc/mysql/my.cnf"
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    entrypoint: bash -c "chown -R mysql:mysql /var/log/mysql && chmod 644 /etc/mysql/my.cnf  && exec /entrypoint.sh mysqld"
+    restart: unless-stopped
+    networks:
+      sharding-jdbc-demo:
+        ipv4_address: 172.25.0.102
